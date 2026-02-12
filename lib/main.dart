@@ -6,13 +6,15 @@ void main() {
   runApp(const MyApp());
 }
 
+const List<String> kMoodEmojis = ['🥰', '🥳', '😆', '🤯', '😵‍💫'];
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'VeryBerry Kansha Days',
+      title: 'Graititude days',
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.pageBackground,
@@ -29,17 +31,14 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      supportedLocales: const [
-        Locale('ko'),
-        Locale('en'),
-        Locale('ja'),
-      ],
+      supportedLocales: const [Locale('ko'), Locale('en'), Locale('ja')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
       home: const LaunchScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -51,6 +50,13 @@ Future<void> saveDiary(DiaryEntry entry) async {
   final prefs = await SharedPreferences.getInstance();
   final oldList = prefs.getStringList('items') ?? <String>[];
   oldList.add(entry.encode());
+  await prefs.setStringList('items', oldList);
+}
+
+Future<void> deleteDiary(DiaryEntry entry) async {
+  final prefs = await SharedPreferences.getInstance();
+  final oldList = prefs.getStringList('items') ?? <String>[];
+  oldList.remove(entry.encode());
   await prefs.setStringList('items', oldList);
 }
 
@@ -72,7 +78,7 @@ class TodayInputScreen extends StatefulWidget {
 
 class _TodayInputScreenState extends State<TodayInputScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<String> _emojis = const ['🥰', '🥳', '😆', '🤯', '😵‍💫'];
+  final List<String> _emojis = kMoodEmojis;
   int? _selectedIndex;
 
   @override
@@ -104,9 +110,9 @@ class _TodayInputScreenState extends State<TodayInputScreen> {
               Text(
                 strings.entryTitle,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.primaryText,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.primaryText,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -169,10 +175,10 @@ class _TodayInputScreenState extends State<TodayInputScreen> {
               Text(
                 strings.moodPrompt,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.primaryText,
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
-                    ),
+                  color: AppColors.primaryText,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: 32),
               Wrap(
@@ -193,9 +199,7 @@ class _TodayInputScreenState extends State<TodayInputScreen> {
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color:
-                              selected
-                                  ? AppColors.primary
-                                  : Colors.transparent,
+                              selected ? AppColors.primary : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -267,10 +271,10 @@ class LaunchScreen extends StatelessWidget {
               Text(
                 strings.appTitle,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.primaryText,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 30,
-                    ),
+                  color: AppColors.primaryText,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 30,
+                ),
               ),
               const Spacer(),
               SizedBox(
@@ -345,10 +349,20 @@ class _DiaryListScreenState extends State<DiaryListScreen> {
     }
   }
 
-  void _openDetail(DiaryEntry entry) {
-    Navigator.push(
+  Future<void> _openDetail(DiaryEntry entry) async {
+    final deleted = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => DiaryDetailScreen(entry: entry)),
+    );
+    if (deleted == true) {
+      await _refresh();
+    }
+  }
+
+  Future<void> _openStats() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MonthlyStatsScreen()),
     );
   }
 
@@ -356,10 +370,23 @@ class _DiaryListScreenState extends State<DiaryListScreen> {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openInput,
-        backgroundColor: AppColors.fabBackground,
-        child: const Icon(Icons.add, color: AppColors.primaryText),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'stats_fab',
+            onPressed: _openStats,
+            backgroundColor: AppColors.fabBackground,
+            child: const Icon(Icons.bar_chart, color: AppColors.primaryText),
+          ),
+          const SizedBox(width: 12),
+          FloatingActionButton(
+            heroTag: 'add_fab',
+            onPressed: _openInput,
+            backgroundColor: AppColors.fabBackground,
+            child: const Icon(Icons.add, color: AppColors.primaryText),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -367,12 +394,14 @@ class _DiaryListScreenState extends State<DiaryListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                strings.diaryTitle,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.primaryText,
-                      fontWeight: FontWeight.w600,
-                    ),
+              Center(
+                child: Text(
+                  strings.diaryTitle,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: AppColors.primaryText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -388,11 +417,11 @@ class _DiaryListScreenState extends State<DiaryListScreen> {
                           itemCount: _items.length,
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.92,
-                          ),
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 0.92,
+                              ),
                           itemBuilder: (context, index) {
                             final item = _items[index];
                             return GestureDetector(
@@ -446,6 +475,194 @@ class _DiaryListScreenState extends State<DiaryListScreen> {
 }
 
 // -----------------------------------------------------
+// 2-1) 월별 감정 통계 화면
+// -----------------------------------------------------
+class MonthlyStatsScreen extends StatefulWidget {
+  const MonthlyStatsScreen({super.key});
+
+  @override
+  State<MonthlyStatsScreen> createState() => _MonthlyStatsScreenState();
+}
+
+class _MonthlyStatsScreenState extends State<MonthlyStatsScreen> {
+  late DateTime _selectedMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedMonth = DateTime(now.year, now.month);
+  }
+
+  void _goToPreviousMonth() {
+    setState(() {
+      _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+    });
+  }
+
+  void _goToNextMonth() {
+    setState(() {
+      _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+    final monthKey = formatMonthKey(_selectedMonth);
+    final monthLabel = strings.monthLabel(_selectedMonth.year, _selectedMonth.month);
+    final canGoNext = _selectedMonth.isBefore(currentMonth);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(strings.statsTitle),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: FutureBuilder<List<DiaryEntry>>(
+          future: loadDiary(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final monthlyItems =
+                snapshot.data!
+                    .where((entry) => entry.date.startsWith('$monthKey-'))
+                    .toList();
+
+            final counts = <String, int>{for (final emoji in kMoodEmojis) emoji: 0};
+            for (final item in monthlyItems) {
+              counts[item.emoji] = (counts[item.emoji] ?? 0) + 1;
+            }
+
+            final totalCount = counts.values.fold<int>(0, (sum, value) => sum + value);
+            final maxCount = counts.values.fold<int>(0, (max, value) => value > max ? value : max);
+            final topEntry =
+                counts.entries.reduce(
+                  (current, next) => next.value > current.value ? next : current,
+                );
+
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: _goToPreviousMonth,
+                          icon: const Icon(Icons.chevron_left),
+                          color: AppColors.primaryText,
+                        ),
+                        Text(
+                          monthLabel,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.primaryText,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: canGoNext ? _goToNextMonth : null,
+                          icon: const Icon(Icons.chevron_right),
+                          color: AppColors.primaryText,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    strings.statsPrompt(monthLabel),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.primaryText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (totalCount == 0)
+                    Text(
+                      strings.noMonthlyData,
+                      style: TextStyle(color: AppColors.secondaryText),
+                    )
+                  else
+                    Text(
+                      strings.topEmotionLabel(topEntry.key, topEntry.value),
+                      style: TextStyle(
+                        color: AppColors.secondaryText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: kMoodEmojis.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        final emoji = kMoodEmojis[index];
+                        final count = counts[emoji] ?? 0;
+                        final widthFactor = maxCount == 0 ? 0.0 : count / maxCount;
+                        return Row(
+                          children: [
+                            SizedBox(
+                              width: 36,
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 24),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(999),
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      height: 20,
+                                      color: AppColors.fieldBackground,
+                                    ),
+                                    FractionallySizedBox(
+                                      widthFactor: widthFactor,
+                                      child: Container(
+                                        height: 20,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 28,
+                              child: Text(
+                                '$count',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: AppColors.primaryText,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------
 // 3) 상세 화면
 // -----------------------------------------------------
 class DiaryDetailScreen extends StatelessWidget {
@@ -456,34 +673,48 @@ class DiaryDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(strings.detailTitle)),
+      appBar: AppBar(
+        title: Text(strings.detailTitle),
+        centerTitle: true,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await deleteDiary(entry);
+          if (!context.mounted) return;
+          Navigator.pop(context, true);
+        },
+        backgroundColor: AppColors.fabBackground,
+        child: const Icon(Icons.delete, color: AppColors.primaryText),
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 12),
-              Text(
-                entry.date,
-                style: TextStyle(
-                  color: AppColors.secondaryText,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  entry.date,
+                  style: TextStyle(
+                    color: AppColors.secondaryText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              Text(entry.emoji, style: const TextStyle(fontSize: 44)),
-              const SizedBox(height: 18),
-              Text(
-                entry.text,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.primaryText,
-                      fontWeight: FontWeight.w500,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                const SizedBox(height: 18),
+                Text(entry.emoji, style: const TextStyle(fontSize: 44)),
+                const SizedBox(height: 18),
+                Text(
+                  entry.text,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.primaryText,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -505,7 +736,8 @@ class DiaryEntry {
     required this.text,
   });
 
-  String encode() => '$date${_DiaryStorage.separator}$emoji${_DiaryStorage.separator}$text';
+  String encode() =>
+      '$date${_DiaryStorage.separator}$emoji${_DiaryStorage.separator}$text';
 
   static DiaryEntry fromRaw(String raw) {
     final parts = raw.split(_DiaryStorage.separator);
@@ -516,11 +748,7 @@ class DiaryEntry {
         text: parts.sublist(2).join(_DiaryStorage.separator),
       );
     }
-    return DiaryEntry(
-      date: formatDate(DateTime.now()),
-      emoji: '🙂',
-      text: raw,
-    );
+    return DiaryEntry(date: formatDate(DateTime.now()), emoji: '🙂', text: raw);
   }
 }
 
@@ -533,6 +761,12 @@ String formatDate(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final day = date.day.toString().padLeft(2, '0');
   return '$year-$month-$day';
+}
+
+String formatMonthKey(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  return '$year-$month';
 }
 
 class AppColors {
@@ -665,6 +899,76 @@ class AppStrings {
         return '保存する';
       default:
         return 'Save';
+    }
+  }
+
+  String get statsTitle {
+    switch (_lang) {
+      case 'ko':
+        return '감정 통계';
+      case 'ja':
+        return '感情統計';
+      default:
+        return 'Emotion Stats';
+    }
+  }
+
+  String statsPrompt(String monthLabel) {
+    switch (_lang) {
+      case 'ko':
+        return '$monthLabel의 당신의 감정을 알아보세요';
+      case 'ja':
+        return '$monthLabel のあなたの感情を見てみましょう';
+      default:
+        return 'See your emotions in $monthLabel';
+    }
+  }
+
+  String topEmotionLabel(String emoji, int count) {
+    switch (_lang) {
+      case 'ko':
+        return '가장 많이 선택한 감정: $emoji ($count회)';
+      case 'ja':
+        return '最も選んだ感情: $emoji ($count回)';
+      default:
+        return 'Most selected emotion: $emoji ($count)';
+    }
+  }
+
+  String get noMonthlyData {
+    switch (_lang) {
+      case 'ko':
+        return '이번 달 기록이 아직 없어요.';
+      case 'ja':
+        return '今月の記録はまだありません。';
+      default:
+        return 'No entries for this month yet.';
+    }
+  }
+
+  String monthLabel(int year, int month) {
+    switch (_lang) {
+      case 'ko':
+        return '$year년 $month월';
+      case 'ja':
+        return '$year年$month月';
+      default:
+        const names = [
+          '',
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
+        return '${names[month]} $year';
     }
   }
 }
