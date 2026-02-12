@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +9,14 @@ void main() {
 }
 
 const List<String> kMoodEmojis = ['🥰', '🥳', '😆', '🤯', '😵‍💫'];
+const List<String> kMainImages = [
+  'assets/imgs/main1.png',
+  'assets/imgs/main2.png',
+  'assets/imgs/main3.png',
+  'assets/imgs/main4.png',
+  'assets/imgs/main5.png',
+  'assets/imgs/main6.png',
+];
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -14,7 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Graititude days',
+      title: 'Gratitude Diary',
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.pageBackground,
@@ -172,46 +182,72 @@ class _TodayInputScreenState extends State<TodayInputScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                strings.moodPrompt,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.primaryText,
-                  fontWeight: FontWeight.w600,
-                  height: 1.2,
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        strings.moodPrompt,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: AppColors.primaryText,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          const spacing = 10.0;
+                          final rawSize =
+                              (constraints.maxWidth -
+                                  (spacing * (_emojis.length - 1))) /
+                              _emojis.length;
+                          final itemSize = rawSize.clamp(42.0, 64.0);
+                          return Row(
+                            children: List.generate(_emojis.length, (index) {
+                              final selected = _selectedIndex == index;
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  right: index == _emojis.length - 1 ? 0 : spacing,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selectedIndex = index),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    curve: Curves.easeOut,
+                                    width: itemSize,
+                                    height: itemSize,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.cardBackground,
+                                      borderRadius: BorderRadius.circular(
+                                        itemSize * 0.28,
+                                      ),
+                                      border: Border.all(
+                                        color:
+                                            selected
+                                                ? AppColors.primary
+                                                : Colors.transparent,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _emojis[index],
+                                      style: TextStyle(fontSize: itemSize * 0.46),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: List.generate(_emojis.length, (index) {
-                  final selected = _selectedIndex == index;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedIndex = index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOut,
-                      width: 64,
-                      height: 64,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color:
-                              selected ? AppColors.primary : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                      child: Text(
-                        _emojis[index],
-                        style: const TextStyle(fontSize: 30),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const Spacer(),
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -253,60 +289,94 @@ class LaunchScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-          child: Column(
-            children: [
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Text('🌈', style: TextStyle(fontSize: 48)),
-                  SizedBox(width: 8),
-                  Text('☁️', style: TextStyle(fontSize: 42)),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.launchGlow.withValues(alpha: 0.9),
+                    AppColors.pageBackground,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              child: Column(
+                children: [
+                  const Spacer(flex: 2),
+                  const SizedBox(
+                    width: double.infinity,
+                    height: 160,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('🌈', style: TextStyle(fontSize: 81.2, height: 1)),
+                        SizedBox(width: 3),
+                        Text('☁️', style: TextStyle(fontSize: 81.2, height: 1)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    strings.appTitle,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.primaryText,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 34,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    strings.launchSubtitle,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.secondaryText,
+                      fontWeight: FontWeight.w400,
+                      height: 1.45,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const Spacer(flex: 3),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 62,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        elevation: 1,
+                        shadowColor: AppColors.primary.withValues(alpha: 0.22),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(36),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DiaryListScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        strings.start,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 18),
-              Text(
-                strings.appTitle,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.primaryText,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 30,
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const DiaryListScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    strings.start,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -324,10 +394,13 @@ class DiaryListScreen extends StatefulWidget {
 
 class _DiaryListScreenState extends State<DiaryListScreen> {
   List<DiaryEntry> _items = const [];
+  late final String _mainImagePath;
+  String? _lastDetailImagePath;
 
   @override
   void initState() {
     super.initState();
+    _mainImagePath = kMainImages[Random().nextInt(kMainImages.length)];
     _refresh();
   }
 
@@ -350,9 +423,24 @@ class _DiaryListScreenState extends State<DiaryListScreen> {
   }
 
   Future<void> _openDetail(DiaryEntry entry) async {
+    final excluded = <String>{_mainImagePath};
+    if (_lastDetailImagePath != null) {
+      excluded.add(_lastDetailImagePath!);
+    }
+    final candidates =
+        kMainImages.where((path) => !excluded.contains(path)).toList();
+    final pool = candidates.isEmpty ? kMainImages : candidates;
+    final detailImagePath = pool[Random().nextInt(pool.length)];
+    _lastDetailImagePath = detailImagePath;
     final deleted = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => DiaryDetailScreen(entry: entry)),
+      MaterialPageRoute(
+        builder:
+            (_) => DiaryDetailScreen(
+              entry: entry,
+              backgroundImagePath: detailImagePath,
+            ),
+      ),
     );
     if (deleted == true) {
       await _refresh();
@@ -370,105 +458,146 @@ class _DiaryListScreenState extends State<DiaryListScreen> {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Scaffold(
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(right: 4, bottom: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _GradientFab(
+              heroTag: 'stats_fab',
+              icon: Icons.bar_chart,
+              onPressed: _openStats,
+            ),
+            const SizedBox(width: 12),
+            _GradientFab(
+              heroTag: 'add_fab',
+              icon: Icons.add,
+              onPressed: _openInput,
+            ),
+          ],
+        ),
+      ),
+      body: Stack(
         children: [
-          FloatingActionButton(
-            heroTag: 'stats_fab',
-            onPressed: _openStats,
-            backgroundColor: AppColors.fabBackground,
-            child: const Icon(Icons.bar_chart, color: AppColors.primaryText),
+          Positioned.fill(child: Image.asset(_mainImagePath, fit: BoxFit.cover)),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.72),
+              ),
+            ),
           ),
-          const SizedBox(width: 12),
-          FloatingActionButton(
-            heroTag: 'add_fab',
-            onPressed: _openInput,
-            backgroundColor: AppColors.fabBackground,
-            child: const Icon(Icons.add, color: AppColors.primaryText),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text(
+                      strings.diaryTitle,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: AppColors.primaryText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child:
+                        _items.isEmpty
+                            ? Center(
+                              child: Text(
+                                strings.emptyMessage,
+                                style: TextStyle(color: AppColors.primaryText),
+                              ),
+                            )
+                            : GridView.builder(
+                              itemCount: _items.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 0.92,
+                                  ),
+                              itemBuilder: (context, index) {
+                                final item = _items[index];
+                                return GestureDetector(
+                                  onTap: () => _openDetail(item),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.cardBackground.withValues(
+                                        alpha: 0.95,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color(0x1A4E5A86),
+                                          blurRadius: 20,
+                                          offset: Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              item.date,
+                                              style: TextStyle(
+                                                color: AppColors.secondaryText,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            Text(
+                                              item.emoji,
+                                              style: const TextStyle(fontSize: 20),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Expanded(
+                                          child: Text(
+                                            item.text,
+                                            maxLines: 4,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.copyWith(
+                                              color: AppColors.primaryText,
+                                              height: 1.45,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          strings.cardReadMore,
+                                          style: TextStyle(
+                                            color: AppColors.secondaryText,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Text(
-                  strings.diaryTitle,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: AppColors.primaryText,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child:
-                    _items.isEmpty
-                        ? Center(
-                          child: Text(
-                            strings.emptyMessage,
-                            style: TextStyle(color: AppColors.primaryText),
-                          ),
-                        )
-                        : GridView.builder(
-                          itemCount: _items.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                childAspectRatio: 0.92,
-                              ),
-                          itemBuilder: (context, index) {
-                            final item = _items[index];
-                            return GestureDetector(
-                              onTap: () => _openDetail(item),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.cardBackground,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 6,
-                                      offset: Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: Stack(
-                                  children: [
-                                    Align(
-                                      alignment: Alignment.topLeft,
-                                      child: Text(
-                                        item.date,
-                                        style: TextStyle(
-                                          color: AppColors.secondaryText,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.bottomCenter,
-                                      child: Text(
-                                        item.emoji,
-                                        style: const TextStyle(fontSize: 36),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -662,20 +791,69 @@ class _MonthlyStatsScreenState extends State<MonthlyStatsScreen> {
   }
 }
 
+class _GradientFab extends StatelessWidget {
+  final String heroTag;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _GradientFab({
+    required this.heroTag,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.fabGradientStart, AppColors.fabGradientEnd],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.22),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: FloatingActionButton(
+        heroTag: heroTag,
+        onPressed: onPressed,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
+}
+
 // -----------------------------------------------------
 // 3) 상세 화면
 // -----------------------------------------------------
 class DiaryDetailScreen extends StatelessWidget {
   final DiaryEntry entry;
-  const DiaryDetailScreen({super.key, required this.entry});
+  final String backgroundImagePath;
+  const DiaryDetailScreen({
+    super.key,
+    required this.entry,
+    required this.backgroundImagePath,
+  });
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(strings.detailTitle),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -686,37 +864,64 @@ class DiaryDetailScreen extends StatelessWidget {
         backgroundColor: AppColors.fabBackground,
         child: const Icon(Icons.delete, color: AppColors.primaryText),
       ),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  entry.date,
-                  style: TextStyle(
-                    color: AppColors.secondaryText,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(entry.emoji, style: const TextStyle(fontSize: 44)),
-                const SizedBox(height: 18),
-                Text(
-                  entry.text,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.primaryText,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+      body: Stack(
+        children: [
+          Positioned.fill(child: Image.asset(backgroundImagePath, fit: BoxFit.cover)),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.74),
+              ),
             ),
           ),
-        ),
+          SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1A4E5A86),
+                        blurRadius: 20,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        entry.date,
+                        style: TextStyle(
+                          color: AppColors.secondaryText,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(entry.emoji, style: const TextStyle(fontSize: 44)),
+                      const SizedBox(height: 18),
+                      Text(
+                        entry.text,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.primaryText,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -770,15 +975,19 @@ String formatMonthKey(DateTime date) {
 }
 
 class AppColors {
-  static const Color pageBackground = Color(0xFFF6F7FF);
-  static const Color appBarBackground = Color(0xFFE5EBFF);
-  static const Color cardBackground = Color(0xFFE2E4F0);
-  static const Color fieldBackground = Color(0xFFEFEFF7);
-  static const Color primary = Color(0xFF4E5A86);
-  static const Color primaryText = Color(0xFF4E5A86);
-  static const Color secondaryText = Color(0xFF6C7393);
-  static const Color disabledButton = Color(0xFFBFC5DA);
+  static const Color pageBackground = Color(0xFFF9F7FF);
+  static const Color appBarBackground = Color(0xFFF0F2FB);
+  static const Color cardBackground = Color(0xFFF3F5FB);
+  static const Color fieldBackground = Color(0xFFEFF2FA);
+  static const Color primary = Color(0xFF5E6A96);
+  static const Color primaryText = Color(0xFF49557E);
+  static const Color secondaryText = Color(0xFF7B85A8);
+  static const Color disabledButton = Color(0xFFCBD2E6);
   static const Color fabBackground = Color(0xFFDDE3FB);
+  static const Color fabGradientStart = Color(0xFFC9D2F4);
+  static const Color fabGradientEnd = Color(0xFFAAB6E8);
+  static const Color launchGlow = Color(0xFFEDEBFF);
+  static const Color launchAccent = Color(0xFFD7E0FF);
 }
 
 class AppStrings {
@@ -806,9 +1015,9 @@ class AppStrings {
   String get start {
     switch (_lang) {
       case 'ko':
-        return '시작';
+        return '시작하기';
       case 'ja':
-        return 'スタート';
+        return 'はじめる';
       default:
         return 'Start';
     }
@@ -844,6 +1053,17 @@ class AppStrings {
         return '感謝日記';
       default:
         return 'Gratitude Diary';
+    }
+  }
+
+  String get launchSubtitle {
+    switch (_lang) {
+      case 'ko':
+        return '오늘의 작은 감사가\n내일을 바꿉니다';
+      case 'ja':
+        return '今日の小さな感謝が\n明日を変えます';
+      default:
+        return 'A small gratitude today\ncan change tomorrow';
     }
   }
 
@@ -899,6 +1119,17 @@ class AppStrings {
         return '保存する';
       default:
         return 'Save';
+    }
+  }
+
+  String get cardReadMore {
+    switch (_lang) {
+      case 'ko':
+        return '눌러서 자세히 보기';
+      case 'ja':
+        return 'タップして詳しく見る';
+      default:
+        return 'Tap to read more';
     }
   }
 
