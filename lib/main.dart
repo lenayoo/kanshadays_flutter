@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -101,71 +102,153 @@ class _TodayInputScreenState extends State<TodayInputScreen> {
     if (_selectedIndex == null) return;
     final parentContext = context;
     _controller.clear();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        final strings = AppStrings.of(context);
-        final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-        return Padding(
-          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                strings.entryTitle,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.primaryText,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _controller,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: strings.entryHint,
-                  filled: true,
-                  fillColor: AppColors.fieldBackground,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
+    final isMobile = MediaQuery.sizeOf(context).shortestSide < 600;
+
+    if (isMobile) {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (context) {
+          final strings = AppStrings.of(context);
+          final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.entryTitle,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.primaryText,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _controller,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: strings.entryHint,
+                    filled: true,
+                    fillColor: AppColors.fieldBackground,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                  onPressed: () async {
-                    final text = _controller.text.trim();
-                    if (text.isEmpty) return;
-                    final entry = DiaryEntry(
-                      date: formatDate(DateTime.now()),
-                      emoji: _emojis[_selectedIndex!],
-                      text: text,
-                    );
-                    await saveDiary(entry);
-                    if (!mounted) return;
-                    Navigator.pop(context);
-                    Navigator.pop(parentContext, true);
-                  },
-                  child: Text(strings.save),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    onPressed: () async {
+                      final text = _controller.text.trim();
+                      if (text.isEmpty) return;
+                      final entry = DiaryEntry(
+                        date: formatDate(DateTime.now()),
+                        emoji: _emojis[_selectedIndex!],
+                        text: text,
+                      );
+                      await saveDiary(entry);
+                      if (!mounted) return;
+                      Navigator.pop(context);
+                      Navigator.pop(parentContext, true);
+                    },
+                    child: Text(strings.save),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        final strings = AppStrings.of(context);
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: AnimatedPadding(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              24 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.entryTitle,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.primaryText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _controller,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: strings.entryHint,
+                    filled: true,
+                    fillColor: AppColors.fieldBackground,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    onPressed: () async {
+                      final text = _controller.text.trim();
+                      if (text.isEmpty) return;
+                      final entry = DiaryEntry(
+                        date: formatDate(DateTime.now()),
+                        emoji: _emojis[_selectedIndex!],
+                        text: text,
+                      );
+                      await saveDiary(entry);
+                      if (!mounted) return;
+                      Navigator.pop(context);
+                      Navigator.pop(parentContext, true);
+                    },
+                    child: Text(strings.save),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -175,6 +258,62 @@ class _TodayInputScreenState extends State<TodayInputScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final isMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    final moodPromptText = Text(
+      strings.moodPrompt,
+      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+        color: AppColors.primaryText,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
+      ),
+      textAlign: TextAlign.center,
+    );
+    final moodSelector = LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 10.0;
+        final rawSize =
+            (constraints.maxWidth - (spacing * (_emojis.length - 1))) /
+            _emojis.length;
+        final itemSize = rawSize.clamp(42.0, 64.0);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_emojis.length, (index) {
+            final selected = _selectedIndex == index;
+            return Padding(
+              padding: EdgeInsets.only(
+                right: index == _emojis.length - 1 ? 0 : spacing,
+              ),
+              child: GestureDetector(
+                onTap: () => setState(() => _selectedIndex = index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  width: itemSize,
+                  height: itemSize,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(itemSize * 0.28),
+                    border: Border.all(
+                      color: selected ? AppColors.primary : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Text(
+                    _emojis[index],
+                    style: TextStyle(fontSize: itemSize * 0.46),
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -183,70 +322,33 @@ class _TodayInputScreenState extends State<TodayInputScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        strings.moodPrompt,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppColors.primaryText,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
+                child:
+                    isMobile
+                        ? Stack(
+                          children: [
+                            Align(
+                              alignment: Alignment.center,
+                              child: moodSelector,
+                            ),
+                            Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: moodPromptText,
+                              ),
+                            ),
+                          ],
+                        )
+                        : Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              moodPromptText,
+                              const SizedBox(height: 32),
+                              moodSelector,
+                            ],
+                          ),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 32),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          const spacing = 10.0;
-                          final rawSize =
-                              (constraints.maxWidth -
-                                  (spacing * (_emojis.length - 1))) /
-                              _emojis.length;
-                          final itemSize = rawSize.clamp(42.0, 64.0);
-                          return Row(
-                            children: List.generate(_emojis.length, (index) {
-                              final selected = _selectedIndex == index;
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  right: index == _emojis.length - 1 ? 0 : spacing,
-                                ),
-                                child: GestureDetector(
-                                  onTap: () => setState(() => _selectedIndex = index),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 180),
-                                    curve: Curves.easeOut,
-                                    width: itemSize,
-                                    height: itemSize,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.cardBackground,
-                                      borderRadius: BorderRadius.circular(
-                                        itemSize * 0.28,
-                                      ),
-                                      border: Border.all(
-                                        color:
-                                            selected
-                                                ? AppColors.primary
-                                                : Colors.transparent,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      _emojis[index],
-                                      style: TextStyle(fontSize: itemSize * 0.46),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
               ),
               SizedBox(
                 width: double.infinity,
